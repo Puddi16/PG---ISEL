@@ -120,7 +120,7 @@ fun distance(coord1X:Int, coord1Y:Int, coord2X:Int, coord2Y:Int):Float{
 fun Int.square() = this * this
 
 data class Velocity(val dx :Int, val dy :Int)
-
+// Change forEach
 fun Ball.brickCollide(bricks: List<Brick>):BrickCollision{
     var finalVelocity = Velocity(this.dx,this.dy)
     var finalBricks = emptyList<Brick>()
