@@ -65,7 +65,7 @@ fun Game.move():Game{
     val newArea = Area(area.width, area.height, moveAndCollision.bricksList, area.lives, newScore)
     val finishArea = Area(area.width, area.height, moveAndCollision.bricksList, area.lives, finishScore)
     val ballFinish = emptyList<Ball>() + Ball(racket.x+ RACKET_WIDTH/2, RACKET_Y - RADIUS, 0, 0)
-    return if(newArea.bricks.size == unbreakeableBricks.size)
+    return if(newArea.bricks.size == unbreakableBricks.size)
         Game(finishArea, ballFinish, racket, over, finish = true)
     else  Game(newArea, moveAndCollision.ballsList, racket, over, finish)
 
@@ -74,18 +74,24 @@ fun Game.move():Game{
 data class UpdateList(val ballsList:List<Ball>, val bricksList: List<Brick>, val score:Int=0)
 
 fun Game.ballMoveAndCollide() :UpdateList {
-    var movedBalls = balls.map { it.move(this) }.filter {it.y in 0..(area.height + 2 * RADIUS)}
+    val movedBalls = balls.map { it.move(this) }.filter {it.y in 0..(area.height + 2 * RADIUS)}
     var finalBricks = area.bricks
-     movedBalls.forEach { ball ->
+    var score = 0
+     val finalBalls = movedBalls.map { ball ->
         val brickCollision = ball.brickCollide(finalBricks)
         val newBricks = finalBricks.map{ brick ->
             val newBrick = Brick(brick.x,brick.y,brick.type,brick.hitCount+1)
-            if(brick in brickCollision.bricks) newBrick else brick
+            if(brick in brickCollision.bricks) {
+                score += newBrick.type.points
+                newBrick
+            }
+            else brick
         }
         finalBricks = newBricks.filter { brick -> brick.hitCount != brick.type.hits }
-        movedBalls = movedBalls.replace(ball,brickCollision.ball)
+        //movedBalls = movedBalls.replace(ball,brickCollision.ball)
+         brickCollision.ball
     }
-    return UpdateList(movedBalls, finalBricks)
+    return UpdateList(finalBalls, finalBricks,score)
 }
 
 /**
@@ -115,5 +121,3 @@ fun Game.throwBall():Game{
 }
 
 fun List<Ball>.replace(old: Ball, new: Ball) = map {if (it == old) new else it}
-
-fun List<Brick>.replace(old: Brick, new: Brick) = map{if (it == old) new else it}

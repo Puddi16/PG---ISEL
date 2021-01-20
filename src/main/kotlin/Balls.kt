@@ -115,31 +115,49 @@ fun distance(coord1X:Int, coord1Y:Int, coord2X:Int, coord2Y:Int):Float{
 /**
  * @receiver An Integer
  *
- * @return The integer power 2
+ * @return The integer squared
  */
 fun Int.square() = this * this
 
 data class Velocity(val dx :Int, val dy :Int)
 // Change forEach
 fun Ball.brickCollide(bricks: List<Brick>):BrickCollision{
-    var finalVelocity = Velocity(this.dx,this.dy)
-    var finalBricks = emptyList<Brick>()
-    bricks.forEach{ brick ->
-        val xBrick = brick.x * BRICK_WIDTH
-        val yBrick = brick.y * BRICK_HEIGHT
-        val closestX = limitTo(this.x, xBrick..xBrick+BRICK_WIDTH)
-        val closestY = limitTo(this.y, yBrick..yBrick+BRICK_HEIGHT)
-        val collided = distance(this.x, this.y, closestX, closestY) <= RADIUS
-        if(collided){
-            if(closestX == xBrick && this.dx > 0 || closestX == xBrick + BRICK_WIDTH && this.dx < 0) {
-                finalBricks = finalBricks + brick
-                finalVelocity = Velocity(-this.dx, this.dy)
-            }
-            else if(closestY == yBrick && this.dy > 0 || closestY == yBrick + BRICK_HEIGHT && this.dy < 0) {
-                finalBricks = finalBricks + brick
-                finalVelocity = Velocity(this.dx, -this.dy)
-            }
-        }
+    val finalVelocity = Velocity(this.dx,this.dy)
+    val finalBricks = bricks.filter{ brick ->
+        val calc = brickCalc(brick)
+        distance(this.x, this.y, calc.closestX, calc.closestY) <= RADIUS
     }
-    return BrickCollision(Ball(x, y, finalVelocity.dx, finalVelocity.dy), finalBricks)
+    when {
+        finalBricks.size == 1 -> {
+            val calc = brickCalc(finalBricks[0])
+            val sideHit = (calc.closestX == calc.x && this.dx > 0 || calc.closestX == calc.x + BRICK_WIDTH && this.dx < 0)
+            val vertHit = (calc.closestY == calc.y && this.dy > 0 || calc.closestY == calc.y + BRICK_HEIGHT && this.dy < 0)
+            if (sideHit) return BrickCollision(Ball(x,y,-dx,dy),finalBricks)
+            if (vertHit) return BrickCollision(Ball(x, y, dx, -dy), finalBricks)
+        }
+        finalBricks.size == 2 -> {
+            val yCondition = finalBricks[0].y == finalBricks[1].y
+            val xCondition = finalBricks[0].x == finalBricks[1].x
+            if(yCondition && finalBricks[0].x == finalBricks[1].x-1 || yCondition && finalBricks[0].x == finalBricks[1].x+1)
+                return BrickCollision(Ball(x,y,dx,-dy),finalBricks)
+            if(xCondition && finalBricks[0].y == finalBricks[1].y-1 || xCondition && finalBricks[0].y == finalBricks[1].y+1)
+                return BrickCollision(Ball(x,y,-dx,dy),finalBricks)
+        }
+        finalBricks.size == 3 -> {
+            println("3 Hit")
+        }
+        else -> return BrickCollision(this, finalBricks)
+    }
+    return if (finalBricks.isEmpty()) BrickCollision(Ball(x, y, finalVelocity.dx, finalVelocity.dy), finalBricks)
+            else BrickCollision(this, finalBricks)
+}
+
+data class BrickCalc(val x :Int, val y :Int, val closestX :Int, val closestY :Int)
+
+fun Ball.brickCalc(brick :Brick) :BrickCalc{
+    val xBrick = brick.x * BRICK_WIDTH
+    val yBrick = brick.y * BRICK_HEIGHT
+    val closestX = limitTo(this.x, xBrick..xBrick+BRICK_WIDTH)
+    val closestY = limitTo(this.y, yBrick..yBrick+BRICK_HEIGHT)
+    return BrickCalc(xBrick, yBrick, closestX, closestY)
 }

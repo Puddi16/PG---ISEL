@@ -115,4 +115,4 @@ val middleBrickFullLines = getBrickCollumn(5..7, 4..10, middleBrickLine) + middl
 val levelOneBricks:List<Brick> = getBrickCollumn(1..3,3..10, leftAndRightLines) +
         getBrickCollumn(9..11, 3..10, leftAndRightLines) + middleBrickFullLines
 
-val unbreakeableBricks:List<Brick> = levelOneBricks.filter {b-> b.type.hits == -1}
+val unbreakableBricks:List<Brick> = levelOneBricks.filter { b-> b.type.hits == -1}
