@@ -9,11 +9,12 @@ import pt.isel.canvas.*
  *
  * @property over
  */
-data class Game(val area:Area,
-                val balls:List<Ball>,
-                val racket: Racket,
-                val over:Boolean = false,
-                val finish:Boolean = false)
+data class Game(val area :Area,
+                val balls :List<Ball>,
+                val racket : Racket,
+                val over :Boolean = false,
+                val finish :Boolean = false,
+                val sound :Boolean = false)
 /**
  * Draws the game's content.(Ball's counter, balls in game, racket, game over and finish letters.)
  *
@@ -40,12 +41,15 @@ fun Canvas.drawGame(g:Game){
  * @return Game's list of balls with one more ball.
  */
 fun Game.newBall():Game {
-    val newRacket = Racket(racket.x, racket.width, true)
+    val newRacket = Racket(racket.x, racket.width)
     val newArea = Area(area.width, area.height, area.bricks, area.lives - 1, area.score)
     return when {
-        (area.lives==0) -> Game (area, balls, racket, over = true, finish)
+        (area.lives==0) -> Game (area, balls, racket, over = true, sound=sound)
         over || finish -> this
-        else -> Game(newArea,balls + Ball(racket.x+RACKET_WIDTH/2, RACKET_Y-RADIUS, 0, 0), newRacket)
+        else -> Game(newArea,
+            balls + Ball(racket.x+RACKET_WIDTH/2, RACKET_Y-RADIUS, 0, 0, true),
+            newRacket,
+            sound=sound)
     }
 }
 /**
@@ -58,7 +62,7 @@ fun Game.newBall():Game {
  *  @return A list of balls with the moved balls in game.
  */
 fun Game.move():Game{
-    if (racket.ballOn || over || finish ) return this
+    if (balls.any { it.onRacket } || over || finish ) return this
     val moveAndCollision = ballMoveAndCollide()
     val newScore = area.score + moveAndCollision.score
     val finishScore = newScore + area.lives * 10
@@ -66,8 +70,8 @@ fun Game.move():Game{
     val finishArea = Area(area.width, area.height, moveAndCollision.bricksList, area.lives, finishScore)
     val ballFinish = emptyList<Ball>() + Ball(racket.x+ RACKET_WIDTH/2, RACKET_Y - RADIUS, 0, 0)
     return if(newArea.bricks.size == unbreakableBricks.size)
-        Game(finishArea, ballFinish, racket, over, finish = true)
-    else  Game(newArea, moveAndCollision.ballsList, racket, over, finish)
+        Game(finishArea, ballFinish, racket, over, finish = true, sound)
+    else  Game(newArea, moveAndCollision.ballsList, racket, over, finish, sound)
 
 }
 
@@ -93,8 +97,8 @@ fun Game.ballMoveAndCollide() :UpdateList {
     val movedBalls = balls.map { it.move(this) }.filter {it.y in 0..(area.height + 2 * RADIUS)}
     var finalBricks = area.bricks
     var score = 0
-     val finalBalls = movedBalls.map { ball ->
-        val brickCollision = ball.brickCollide(finalBricks)
+    val finalBalls = movedBalls.map { ball ->
+        val brickCollision = ball.brickCollide(finalBricks, sound)
         val newBricks = finalBricks.map{ brick ->
             val newBrick = Brick(brick.x,brick.y,brick.type,brick.hitCount+1)
             if(brick in brickCollision.bricks) {
@@ -120,13 +124,13 @@ fun Game.ballMoveAndCollide() :UpdateList {
  * @return The game with the moved racket and ball/s.
  */
 fun Game.moveRacket(mEvent:MouseEvent):Game{
-    val newRacket = Racket(mEvent.x - RACKET_WIDTH / 2, racket.width, if(finish)true else racket.ballOn)
-    val newBalls = emptyList<Ball>() + Ball(mEvent.x, RACKET_Y - RADIUS, 0, 0)
+    val newRacket = Racket(mEvent.x - RACKET_WIDTH / 2, racket.width)
+    val newBalls = balls.map {if (it.onRacket) Ball(mEvent.x, RACKET_Y - RADIUS, 0, 0, it.onRacket) else it}
     val racketInArea:Boolean = mEvent.x in RACKET_WIDTH / 2..area.width - RACKET_WIDTH / 2
     return when{
-        racketInArea && !racket.ballOn -> Game(area, balls, newRacket, over, finish)
-        racketInArea && racket.ballOn  -> Game(area, newBalls, newRacket, over, finish)
-        else                           -> this
+        racketInArea && newBalls.all{!it.onRacket} -> Game(area, balls, newRacket, over, finish, sound)
+        racketInArea && newBalls.any{it.onRacket}  -> Game(area, newBalls, newRacket, over, finish, sound)
+        else                                       -> this
     }
 }
 
@@ -136,9 +140,10 @@ fun Game.moveRacket(mEvent:MouseEvent):Game{
  *  @receiver [Game] The game.
  */
 fun Game.throwBall():Game{
-    val newRacket = Racket(racket.x, racket.width, false)
-    val newBalls = balls.replace(balls[0], Ball(balls[0].x, balls[0].y, balls[0].dx, DELTA_Y))
-    return if (over) this else Game(area, newBalls, newRacket, over, finish)
+    val newRacket = Racket(racket.x, racket.width)
+    val newBalls = balls.map{ball ->
+        if(ball.onRacket) Ball(ball.x, ball.y, ball.dx, DELTA_Y, false) else ball}
+    return if (over || finish) this else Game(area, newBalls, newRacket, over, finish, sound)
 }
 
 fun List<Ball>.replace(old: Ball, new: Ball) = map {if (it == old) new else it}

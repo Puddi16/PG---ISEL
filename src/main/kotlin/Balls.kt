@@ -12,7 +12,7 @@ import kotlin.math.sqrt
  *
  * @property dy vertical coordinate variation.
  */
-data class Ball(val x :Int, val y :Int, val dx :Int, val dy :Int)
+data class Ball(val x :Int, val y :Int, val dx :Int, val dy :Int, val onRacket :Boolean=false)
 /**
  * Ball radius, vertical & horizontal moving velocity.
  */
@@ -23,7 +23,7 @@ val DELTA_X = (-6..6)
 /**
  *  Starting balls for the beginning of the game.
  */
-val startingBalls = emptyList<Ball>() + Ball(RACKET_X + RACKET_WIDTH / 2,RACKET_Y - RADIUS,0,0)
+val startingBalls = emptyList<Ball>() + Ball(RACKET_X + RACKET_WIDTH / 2,RACKET_Y - RADIUS,0,0, true)
 
 /**
  *  Draws a ball.
@@ -131,6 +131,17 @@ fun Int.square() = this * this
 data class Velocity(val dx :Int, val dy :Int)
 
 /**
+ *  Data class used in [brickCollide] to calculate:
+ *
+ *  @param x Brick's horizontal position.
+ *  @param y Brick's vertical position.
+ *  @param closestX Closest horizontal coordinate to the ball.
+ *  @param closestY Closest vertical coordinate to the ball.
+ */
+data class BrickCalc(val x :Int, val y :Int, val closestX :Int, val closestY :Int)
+
+
+/**
  *  Changes a ball direction of movement based on how it hit a brick.
  *
  *  @receiver [Ball] Ball that hit the bricks.
@@ -139,58 +150,46 @@ data class Velocity(val dx :Int, val dy :Int)
  *
  *  @return :BrickCollision
  */
-fun Ball.brickCollide(bricks: List<Brick>):BrickCollision{
-    val finalVelocity = Velocity(this.dx,this.dy)
+fun Ball.brickCollide(bricks: List<Brick>, sound:Boolean) :BrickCollision{
+    fun brickCalc(brick :Brick) :BrickCalc{
+        val xBrick = brick.x * BRICK_WIDTH
+        val yBrick = brick.y * BRICK_HEIGHT
+        val closestX = limitTo(this.x, xBrick..xBrick + BRICK_WIDTH)
+        val closestY = limitTo(this.y, yBrick..yBrick + BRICK_HEIGHT)
+        return BrickCalc(xBrick, yBrick, closestX, closestY)
+    }
     val finalBricks = bricks.filter{ brick ->
         val calc = brickCalc(brick)
         distance(this.x, this.y, calc.closestX, calc.closestY) <= RADIUS
     }
-    when (finalBricks.size) {
+    var finalBall = this
+    when(finalBricks.size) {
         1 -> {
             val calc = brickCalc(finalBricks[0])
-            val sideHit = (calc.closestX == calc.x && this.dx > 0 || calc.closestX == calc.x + BRICK_WIDTH && this.dx < 0)
-            val vertHit = (calc.closestY == calc.y && this.dy > 0 || calc.closestY == calc.y + BRICK_HEIGHT && this.dy < 0)
-            if (sideHit) return BrickCollision(Ball(x,y,-dx,dy),finalBricks)
-            if (vertHit) return BrickCollision(Ball(x, y, dx, -dy), finalBricks)
+            val sideHit = (calc.closestX == calc.x && this.dx > 0 || calc.closestX == calc.x+BRICK_WIDTH && this.dx < 0)
+            val vertHit = (calc.closestY == calc.y && this.dy > 0 || calc.closestY == calc.y+BRICK_HEIGHT && this.dy < 0)
+            finalBall = when {
+                sideHit -> Ball(x,y,-dx,dy)
+                vertHit -> Ball(x, y, dx, -dy)
+                else    -> Ball(x, y, -dx, -dy)
         }
+    }
         2 -> {
             val yCondition = finalBricks[0].y == finalBricks[1].y
             val xCondition = finalBricks[0].x == finalBricks[1].x
-            if(yCondition && finalBricks[0].x == finalBricks[1].x-1 || yCondition && finalBricks[0].x == finalBricks[1].x+1)
-                return BrickCollision(Ball(x,y,dx,-dy),finalBricks)
-            if(xCondition && finalBricks[0].y == finalBricks[1].y-1 || xCondition && finalBricks[0].y == finalBricks[1].y+1)
-                return BrickCollision(Ball(x,y,-dx,dy),finalBricks)
+            val brickBelowOrTop = finalBricks[0].y == finalBricks[1].y + 1 || finalBricks[0].y == finalBricks[1].y-1
+            val brickRightOrLeft = finalBricks[0].x == finalBricks[1].x - 1 || finalBricks[0].x == finalBricks[1].x + 1
+            val twoBrickVertHit:Boolean = xCondition && brickBelowOrTop
+            val twoBrickSideHit:Boolean = yCondition && brickRightOrLeft
+            finalBall = when {
+                twoBrickSideHit -> Ball(x, y, dx, -dy)
+                twoBrickVertHit -> Ball(x, y, -dx, dy)
+                else            -> Ball(x, y, -dx, -dy)
+            }
         }
-        3 -> return BrickCollision(Ball(x, y, -dx, -dy),finalBricks)
-        else -> return BrickCollision(this, finalBricks)
+        3 -> finalBall = Ball(x, y, -dx, -dy)
     }
-    return if (finalBricks.isEmpty()) BrickCollision(Ball(x, y, finalVelocity.dx, finalVelocity.dy), finalBricks)
-            else BrickCollision(this, finalBricks)
+    return BrickCollision(finalBall, finalBricks)
 }
 
-/**
- *  Brick Calc Information.
- *
- *  @param x Brick's horizontal position.
- *  @param y Brick's vertical position.
- *  @param closestX Ball's horizontal position range.
- *  @param closestY all's vertical position range.
- */
-data class BrickCalc(val x :Int, val y :Int, val closestX :Int, val closestY :Int)
 
-/**
- *  Calculates the area that defines the brick.
- *
- *  @receiver [Ball]
- *
- *  @param brick The brick used in the calculus.
- *
- *  @return :BrickCalc
- */
-fun Ball.brickCalc(brick :Brick) :BrickCalc{
-    val xBrick = brick.x * BRICK_WIDTH
-    val yBrick = brick.y * BRICK_HEIGHT
-    val closestX = limitTo(this.x, xBrick..xBrick+BRICK_WIDTH)
-    val closestY = limitTo(this.y, yBrick..yBrick+BRICK_HEIGHT)
-    return BrickCalc(xBrick, yBrick, closestX, closestY)
-}

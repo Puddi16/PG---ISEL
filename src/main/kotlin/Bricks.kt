@@ -63,7 +63,7 @@ fun Canvas.drawBrick(b:Brick){
 }
 
 /**
- *  Creates a brick Column.
+ *  Creates a list with all of a brick in a column with coordinates limited to the ranges.
  *
  *  @param xRange Horizontal range for the brick column.
  *  @param yRange Vertical range for the brick column.
@@ -71,7 +71,7 @@ fun Canvas.drawBrick(b:Brick){
  *
  *  @return A list of bricks.
  */
-fun getBrickColumn(xRange: IntRange, yRange:IntRange, l:List<Bricks>):List<Brick>{
+fun getBrickLines(xRange: IntRange, yRange:IntRange, l:List<Bricks>):List<Brick>{
     var brickList = emptyList<Brick>()
     var index = 0
     yRange.forEach {y->
@@ -95,7 +95,10 @@ fun getBrickColumn(xRange: IntRange, yRange:IntRange, l:List<Bricks>):List<Brick
     return brickList
 }
 
-val middleBrickLine = listOf(
+/**
+ *  Bricks in the middle column without the first line.
+ */
+val middleBrickColumn = listOf(
     Bricks.Orange,
     Bricks.Cyan,
     Bricks.Green,
@@ -104,8 +107,10 @@ val middleBrickLine = listOf(
     Bricks.Magenta,
     Bricks.Silver)
 
-
-val leftAndRightLines = listOf(
+/**
+ *  Bricks in the left and right columns.
+ */
+val leftAndRightColumns = listOf(
     Bricks.Yellow,
     Bricks.Magenta,
     Bricks.Blue,
@@ -114,16 +119,29 @@ val leftAndRightLines = listOf(
     Bricks.Cyan,
     Bricks.Orange,
     Bricks.White)
-
-
-val middleCollumnFirstLine = listOf<Brick>(
+/**
+ * Ranges with Area's left brick collumn coordinates in bricks(not pixels).
+ */
+val leftCollumnX:IntRange = 1..3
+val leftCollumnY:IntRange = 3..10
+/**
+ *  Bricks in the first line of the middle column.
+ */
+val middleColumnFirstLine = listOf<Brick>(
     Brick(5, 3, Bricks.White), Brick(6, 3, Bricks.Gold), Brick(7, 3, Bricks.White))
 
+/**
+ *  Completed middle brick column.
+ */
+val middleBrickFullLines = getBrickLines(5..7, 4..10, middleBrickColumn) + middleColumnFirstLine
 
-val middleBrickFullLines = getBrickColumn(5..7, 4..10, middleBrickLine) + middleCollumnFirstLine
+/**
+ * Starting Bricks in the current and only level
+ */
+val levelOneBricks:List<Brick> = getBrickLines(leftCollumnX,leftCollumnY, leftAndRightColumns) +
+        getBrickLines(9..11, 3..10, leftAndRightColumns) + middleBrickFullLines
 
-
-val levelOneBricks:List<Brick> = getBrickColumn(1..3,3..10, leftAndRightLines) +
-        getBrickColumn(9..11, 3..10, leftAndRightLines) + middleBrickFullLines
-
+/**
+ *  List of bricks that cannot be destroyed.
+ */
 val unbreakableBricks:List<Brick> = levelOneBricks.filter { b-> b.type.hits == -1}
