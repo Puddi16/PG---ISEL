@@ -7,6 +7,12 @@ import pt.isel.canvas.*
  * @property width game's window width in pixels.
  *
  * @property height game's window height in pixels.
+ *
+ * @property bricks list of bricks.
+ *
+ * @property lives number of lives.
+ *
+ * @property score score tracker for the game.
  */
 data class Area(val width:Int, val height:Int, val bricks: List<Brick>, val lives:Int, val score:Int)
 

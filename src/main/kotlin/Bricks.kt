@@ -1,13 +1,13 @@
 import pt.isel.canvas.*
 
 /**
- * Bricks width and height in pixels
+ * Bricks width and height in pixels.
  */
 const val BRICK_WIDTH = 32
 const val BRICK_HEIGHT = 15
 
 /**
- * Bricks border width and height and thickness in pixels
+ * Bricks border width and height and thickness in pixels.
  */
 const val BORDER_WIDTH = BRICK_WIDTH -1
 const val BORDER_HEIGHT = BRICK_HEIGHT -1
@@ -17,14 +17,16 @@ const val BORDER_THICK = 1
  * Brick information.
  *
  * Position ([x],[y]) and [type].
- * @property x Horizontal brick position in bricks
- * @property y Vertical brick position in bricks
- * @property type Brick's type
+ *
+ * @property x Horizontal brick position in bricks.
+ * @property y Vertical brick position in bricks.
+ * @property type Brick's type.
+ * @property hitCount Number of hits left on a brick before getting destroyed.
  */
 data class Brick(val x:Int, val y:Int, val type:Bricks, val hitCount:Int=0)
 
 /**
- * Colors in hexadecimal
+ * Colors in hexadecimal.
  */
 const val ORANGE = 0xFFA500
 const val GOLD = 0xFFD700
@@ -33,12 +35,12 @@ const val SILVER = 0xC0C0C0
 /**
  * Brick types.
  *
- * @property color Brick Possible colors
+ * @property color Brick Possible colors.
  *
- * @property points Points that bricks add to the score when hit
+ * @property points Points that bricks add to the score when destroyed.
  *
  * @property hits Hits that the bricks take to disappear
- * "-1" hits means that it won't disappear if hit
+ * "-1" hits means that it won't disappear if hit.
  */
 enum class Bricks(val color: Int, val points:Int, val hits:Int){White(WHITE, 1,1), Orange(ORANGE, 2, 1),
     Cyan(CYAN, 3,1), Green(GREEN, 4, 1), Red(RED, 6,1 ), Blue(BLUE, 7,1),
@@ -46,11 +48,11 @@ enum class Bricks(val color: Int, val points:Int, val hits:Int){White(WHITE, 1,1
 }
 
 /**
- * Draws a Brick
+ * Draws a Brick.
  *
- * @receiver [Canvas] Where it draws
+ * @receiver [Canvas] Where it draws.
  *
- * @param b Brick to draw
+ * @param b Brick to draw.
  *
  */
 fun Canvas.drawBrick(b:Brick){
@@ -60,7 +62,16 @@ fun Canvas.drawBrick(b:Brick){
     drawRect(x+BORDER_THICK, y+BORDER_THICK, BORDER_WIDTH, BORDER_HEIGHT, BLACK, BORDER_THICK)
 }
 
-fun getBrickCollumn(xRange: IntRange, yRange:IntRange, l:List<Bricks>):List<Brick>{
+/**
+ *  Creates a brick Column.
+ *
+ *  @param xRange Horizontal range for the brick column.
+ *  @param yRange Vertical range for the brick column.
+ *  @param l List of bricks for the column.
+ *
+ *  @return A list of bricks.
+ */
+fun getBrickColumn(xRange: IntRange, yRange:IntRange, l:List<Bricks>):List<Brick>{
     var brickList = emptyList<Brick>()
     var index = 0
     yRange.forEach {y->
@@ -109,10 +120,10 @@ val middleCollumnFirstLine = listOf<Brick>(
     Brick(5, 3, Bricks.White), Brick(6, 3, Bricks.Gold), Brick(7, 3, Bricks.White))
 
 
-val middleBrickFullLines = getBrickCollumn(5..7, 4..10, middleBrickLine) + middleCollumnFirstLine
+val middleBrickFullLines = getBrickColumn(5..7, 4..10, middleBrickLine) + middleCollumnFirstLine
 
 
-val levelOneBricks:List<Brick> = getBrickCollumn(1..3,3..10, leftAndRightLines) +
-        getBrickCollumn(9..11, 3..10, leftAndRightLines) + middleBrickFullLines
+val levelOneBricks:List<Brick> = getBrickColumn(1..3,3..10, leftAndRightLines) +
+        getBrickColumn(9..11, 3..10, leftAndRightLines) + middleBrickFullLines
 
 val unbreakableBricks:List<Brick> = levelOneBricks.filter { b-> b.type.hits == -1}

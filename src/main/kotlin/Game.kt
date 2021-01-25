@@ -35,9 +35,9 @@ fun Canvas.drawGame(g:Game){
 /**
  * Adds one more ball to the game.
  *
- * @receiver The game
+ * @receiver [Game] The game
  *
- * @return Games's list of balls with one more ball.
+ * @return Game's list of balls with one more ball.
  */
 fun Game.newBall():Game {
     val newRacket = Racket(racket.x, racket.width, true)
@@ -53,7 +53,7 @@ fun Game.newBall():Game {
  *  and removes from it, the balls that leave
  *  the window from it's bottom border.
  *
- *  @receiver The game.
+ *  @receiver [Game] The game.
  *
  *  @return A list of balls with the moved balls in game.
  */
@@ -71,8 +71,24 @@ fun Game.move():Game{
 
 }
 
+/**
+ *  UpdateList Information.
+ *
+ *  @param ballsList List of balls.
+ *  @param bricksList List of bricks.
+ *  @param score In-game score starting at 0.
+ */
 data class UpdateList(val ballsList:List<Ball>, val bricksList: List<Brick>, val score:Int=0)
 
+/**
+ *  Makes the balls move and
+ *  verify if there was a collision
+ *  between a ball and a brick.
+ *
+ *  @receiver [Game] The game.
+ *
+ *  @return An updated list of bricks and balls.
+ */
 fun Game.ballMoveAndCollide() :UpdateList {
     val movedBalls = balls.map { it.move(this) }.filter {it.y in 0..(area.height + 2 * RADIUS)}
     var finalBricks = area.bricks
@@ -97,11 +113,11 @@ fun Game.ballMoveAndCollide() :UpdateList {
 /**
  * * Moves the racket on x axis on mouse move. Moves the ball/S too if the ball/s is/are on the racket.
  *
- * @param mEvent Mouse Event
+ * @param mEvent Mouse Event.
  *
- * @receiver The game
+ * @receiver The game.
  *
- * @return The game with the moved racket and ball/s
+ * @return The game with the moved racket and ball/s.
  */
 fun Game.moveRacket(mEvent:MouseEvent):Game{
     val newRacket = Racket(mEvent.x - RACKET_WIDTH / 2, racket.width, if(finish)true else racket.ballOn)
@@ -114,6 +130,11 @@ fun Game.moveRacket(mEvent:MouseEvent):Game{
     }
 }
 
+/**
+ *  Makes the ball leave the racket.
+ *
+ *  @receiver [Game] The game.
+ */
 fun Game.throwBall():Game{
     val newRacket = Racket(racket.x, racket.width, false)
     val newBalls = balls.replace(balls[0], Ball(balls[0].x, balls[0].y, balls[0].dx, DELTA_Y))

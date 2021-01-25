@@ -5,22 +5,19 @@ import pt.isel.canvas.WHITE
  * Racket's information.
  *
  * @property x horizontal position
- *
  * @property width Racket's width
+ * @property ballOn Boolean that tells if the ball is on racket.
  */
 data class Racket(val x:Int, val width:Int, val ballOn:Boolean)
 
 /**
- * Main rectangle width.
+ * Main rectangle width and height in pixels.
  */
 const val RACKET_WIDTH = 60
-/**
- * Main rectangle height.
- */
 const val RACKET_HEIGHT = 10
 
 /**
- * Corner rectangle width and color,
+ * Corner rectangle width, color
  * and ball's displacement variation
  * if it hits the corner.
  */
@@ -47,7 +44,7 @@ const val RACKET_X = WIDTH/2 - RACKET_WIDTH/2
 const val RACKET_Y = 550
 
 /**
- * Starting Racket
+ * Starting Racket.
  */
 val startingRacket = Racket(RACKET_X, RACKET_WIDTH, true)
 
